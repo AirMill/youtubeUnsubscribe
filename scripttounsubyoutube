@@ -1,0 +1,58 @@
+
+var i = 0;
+
+function unsubscribeStep() {
+    var gridContainer = document.getElementById("grid-container");
+
+    if (!gridContainer) {
+        console.log("❌ Grid container not found. Stopping script.");
+        return;
+    }
+
+    var els = gridContainer.getElementsByClassName("ytd-expanded-shelf-contents-renderer");
+
+    if (i >= els.length) {
+        console.log("✅ All subscriptions processed. Stopping script.");
+        return;
+    }
+
+    let unsubscribeButton = els[i]?.querySelector("[aria-label^='Unsubscribe from']");
+    if (!unsubscribeButton) {
+        console.log(`❌ No unsubscribe button found for ${i + 1}. Skipping...`);
+        i++;
+        unsubscribeStep(); // Move to the next channel
+        return;
+    }
+
+    // Click "Unsubscribe" button
+    unsubscribeButton.click();
+    console.log(`⏳ Clicked unsubscribe for ${i + 1}/${els.length}. Waiting for manual confirmation...`);
+
+    // Watch for confirmation modal disappearing
+    let observer = new MutationObserver(() => {
+        let confirmButton = document.getElementById("confirm-button");
+
+        if (!confirmButton) {
+            console.log(`✅ Unsubscribed manually. Moving to next...`);
+            observer.disconnect(); // Stop observing
+            i++; // Move to the next channel
+            setTimeout(unsubscribeStep, 500); // Wait 1 sec before next attempt
+        }
+    });
+
+    // Observe changes in the document
+    observer.observe(document.body, { childList: true, subtree: true });
+}
+
+// Start the script and keep running
+function startLoop() {
+    unsubscribeStep();
+    setInterval(() => {
+        if (i < document.getElementsByClassName("ytd-expanded-shelf-contents-renderer").length) {
+            unsubscribeStep();
+        }
+    }, 1000);
+}
+
+startLoop();
+
